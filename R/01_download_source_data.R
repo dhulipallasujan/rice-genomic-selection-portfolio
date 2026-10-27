@@ -23,8 +23,16 @@ if (file.exists(manifest_path)) {
 } else {
   manifest <- data.frame(
     file = character(), source_url = character(), access_date = character(),
-    bytes = numeric(), sha256 = character(), stringsAsFactors = FALSE
+    bytes = numeric(), modified_utc = character(), sha256 = character(),
+    stringsAsFactors = FALSE
   )
+}
+
+sha256_file <- function(path) {
+  con <- file(path, open = "rb")
+  on.exit(close(con))
+  digest::digest(readBin(con, what = "raw", n = as.integer(file.info(path)[["size"]])),
+                 algo = "sha256", serialize = FALSE)
 }
 
 for (name in files) {
@@ -45,7 +53,8 @@ for (name in files) {
   record <- data.frame(
     file = name, source_url = url, access_date = as.character(Sys.Date()),
     bytes = unname(file.info(destination)$size),
-    sha256 = digest::digest(destination, algo = "sha256", file = TRUE),
+    modified_utc = format(file.info(destination)$mtime, tz = "UTC", usetz = TRUE),
+    sha256 = sha256_file(destination),
     stringsAsFactors = FALSE
   )
   manifest <- manifest[manifest$file != name, , drop = FALSE]

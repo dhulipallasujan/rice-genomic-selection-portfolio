@@ -15,13 +15,22 @@ if (!length(files)) {
   stop("No source files found in data/raw. See data/raw/README.md for the source list.")
 }
 
+# Read bytes directly before hashing. digest(file = TRUE) relies on
+# file.access(), which can report unreadable for readable files on Windows.
+sha256_file <- function(path) {
+  con <- file(path, open = "rb")
+  on.exit(close(con))
+  digest::digest(readBin(con, what = "raw", n = as.integer(file.info(path)[["size"]])),
+                 algo = "sha256", serialize = FALSE)
+}
+
 manifest <- data.frame(
   file = basename(files),
   source_url = NA_character_,
   access_date = NA_character_,
   bytes = file.info(files)$size,
   modified_utc = format(file.info(files)$mtime, tz = "UTC", usetz = TRUE),
-  sha256 = vapply(files, digest::digest, character(1), file = TRUE, algo = "sha256"),
+  sha256 = vapply(files, sha256_file, character(1)),
   stringsAsFactors = FALSE
 )
 if (file.exists("data/source_manifest.csv")) {
