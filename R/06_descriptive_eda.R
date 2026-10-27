@@ -35,8 +35,8 @@ plot(pcs$PC1, pcs$PC2, col = cols[pcs$cluster], pch = 19, cex = .8,
 legend("topright", legend = paste("Cluster", levels(pcs$cluster)), col = cols, pch = 19, bty = "n", cex = .8)
 dev.off()
 
-# Unbalanced phenotype coverage: rows are environments, columns are lines.
-line_order <- pcs$LineID
+# Yield coverage by environment. Count non-missing outcomes, not merely rows
+# in the phenotype table: some line-environment rows have no yield value.
 env_order <- sort(unique(P$EnvID))
 env_codes <- c("Bangladesh_Gazipur_2019_Wet" = "BD_GZ_19W", "Bangladesh_Nizmawna_2019_Wet" = "BD_NM_19W",
   "India_Cuttack_2019_Wet" = "IN_CU_19W", "India_Hyderabad_2018_Wet" = "IN_HY_18W",
@@ -46,19 +46,33 @@ env_codes <- c("Bangladesh_Gazipur_2019_Wet" = "BD_GZ_19W", "Bangladesh_Nizmawna
   "Mozambique_Chokwe_2020_Wet" = "MZ_CK_20W", "Mozambique_Maputo_2020_Wet" = "MZ_MP_20W",
   "Philippines_Los Banos_2019_Dry" = "PH_LB_19D", "Philippines_Los Banos_2019_Wet" = "PH_LB_19W",
   "Tanzania_Dakawa_2020_Wet" = "TZ_DK_20W")
-fwrite(data.table(line_index = seq_along(line_order), LineID = line_order), "reports/line_index_key.csv")
-zmat <- matrix(0, nrow = length(line_order), ncol = length(env_order),
-               dimnames = list(line_order, env_order))
-for (i in seq_len(nrow(P))) zmat[P$LineID[i], P$EnvID[i]] <- 1
-png("results/figures/phenotype_coverage.png", width = 1800, height = 1050, res = 220)
-par(mar = c(5, 8, 5, 2))
-image(seq_along(line_order), seq_along(env_order), zmat,
-      col = c("#F2F4F7", "#147D76"), axes = FALSE, xlab = "",
-      ylab = "", main = "Observed yield records by line and environment")
-axis(2, at = seq_along(env_order), labels = unname(env_codes[env_order]), las = 2, cex.axis = .9)
-axis(1, at = seq(1, length(line_order), length.out = 6), labels = round(seq(1, length(line_order), length.out = 6)), cex.axis = .8)
-mtext("Genotype line index (see reports/line_index_key.csv)", side = 1, line = 3)
-mtext("Dark = observed; pale = missing phenotype", side = 3, line = .4, cex = .85)
+yield_coverage <- P[, .(observed = sum(!is.na(YLD))), by = EnvID][match(env_order, EnvID)]
+yield_coverage[, label := unname(env_codes[EnvID])]
+png("results/figures/phenotype_coverage.png", width = 2200, height = 1350, res = 220)
+par(mar = c(5, 9, 5, 4), xaxs = "i", yaxs = "i", las = 1,
+    family = "sans", col.axis = "#344054", col.lab = "#344054")
+ord <- order(yield_coverage$observed)
+yy <- barplot(yield_coverage$observed[ord], horiz = TRUE,
+              names.arg = yield_coverage$label[ord],
+              xlim = c(0, 120), xaxt = "n", xlab = "Lines with an observed yield value (of 107)",
+              col = ifelse(yield_coverage$observed[ord] == max(yield_coverage$observed),
+                           "#147D76", "#E39A55"), border = NA, space = .28,
+              main = "Yield data coverage varies across trials",
+              cex.names = 1.05, cex.lab = 1.05, cex.main = 1.35)
+axis(1, at = seq(0, 100, 20), labels = seq(0, 100, 20), col = "#98A2B3", col.ticks = "#98A2B3")
+for (x in seq(0, 100, 20)) abline(v = x, col = "#E8EDF2", lwd = 1)
+# Redraw bars over the subtle count grid so the values remain easy to compare.
+barplot(yield_coverage$observed[ord], horiz = TRUE,
+        names.arg = rep("", nrow(yield_coverage)), add = TRUE,
+        col = ifelse(yield_coverage$observed[ord] == max(yield_coverage$observed),
+                     "#147D76", "#E39A55"), border = NA, space = .28,
+        axes = FALSE)
+abline(v = max(yield_coverage$observed), lty = 2, lwd = 1.5, col = "#667085")
+text(yield_coverage$observed[ord] + 2, yy,
+     labels = sprintf("%d / 107", yield_coverage$observed[ord]),
+     adj = 0, cex = .9, col = "#344054", xpd = NA)
+mtext("Counts exclude missing yield values; full environment names are in reports/yield_by_environment.csv",
+      side = 3, line = .6, cex = .9, col = "#667085")
 dev.off()
 
 # Environment-wise yield distributions, with points revealing sample sizes.
