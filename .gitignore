@@ -1,0 +1,34 @@
+# RStudio session files and generated local data
+.Rproj.user/
+.Rhistory
+.RData
+
+# Publisher supplements are downloaded locally, not committed
+/data/raw/*
+!/data/raw/README.md
+
+# Recreated by the preparation script
+/data/processed/*
+!/data/processed/README.md
+
+# Local package libraries
+renv/library/
+
+# Optional empty scratch area
+/results/tables/
+
+# Recreated detailed/intermediate outputs; compact summaries and figures stay tracked
+/results/baseline_cv_by_environment.csv
+/results/baseline_cv_replicates.csv
+/results/global_multienv_cv_by_environment.csv
+/results/global_multienv_cv_environment_summary.csv
+/results/nested_multienv_cv_by_environment.csv
+/results/nested_multienv_cv_environment_summary.csv
+/results/nested_multienv_model_selection_counts.csv
+/results/duplicate_exclusion_cv_by_environment.csv
+/results/duplicate_exclusion_cv_environment_summary.csv
+/results/duplicate_exclusion_model_selection_counts.csv
+/results/duplicate_sensitivity_by_environment.csv
+/results/cluster_k*_cv_by_environment.csv
+/results/cluster_k*_cv_environment_summary.csv
+/results/cluster_k*_model_selection_counts.csv
